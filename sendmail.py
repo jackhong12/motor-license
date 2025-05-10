@@ -33,8 +33,14 @@ class MailHandler:
         else:
             self.content2 += "---\n"
 
+    def plain (self):
+        print(self.content1)
+        print(self.content2)
+
     def send (self):
-        html = markdown.markdown(self.content1 + "\n---\n" + self.content2)
+        fullContent = self.content1 + "\n---\n"
+        fullContent += self.content2
+        html = markdown.markdown(fullContent)
         self.send_impl(html)
 
     def send_impl (self, txt, subject="機車有名額時段"):
