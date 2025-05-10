@@ -6,22 +6,35 @@ from email.mime.multipart import MIMEMultipart
 
 class MailHandler:
     def __init__ (self):
-        self.content = ""
+        self.content1 = ""
+        self.content2 = ""
 
-    def bold (self, msg):
-        self.content += f"**{msg}**"
+    def bold (self, msg, isImportant = True):
+        if isImportant:
+            self.content1 += f"**{msg}**"
+        else:
+            self.content2 += f"**{msg}**"
 
-    def text (self, msg):
-        self.content += f"{msg}"
+    def text (self, msg, isImportant = True):
+        if isImportant:
+            self.content1 += f"{msg}"
+        else:
+            self.content2 += f"{msg}"
 
-    def textln (self, msg):
-        self.content += f"{msg}\n"
+    def textln (self, msg, isImportant = True):
+        if isImportant:
+            self.content1 += f"{msg}\n"
+        else:
+            self.content2 += f"{msg}\n"
 
-    def newParagraph (self):
-        self.content += "---\n"
+    def newParagraph (self, isImportant = True):
+        if isImportant:
+            self.content1 += "---\n"
+        else:
+            self.content2 += "---\n"
 
     def send (self):
-        html = markdown.markdown(self.content)
+        html = markdown.markdown(self.content1 + "\n---\n" + self.content2)
         self.send_impl(html)
 
     def send_impl (self, txt, subject="機車有名額時段"):
