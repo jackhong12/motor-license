@@ -1,21 +1,14 @@
 import smtplib
-import os
-from dotenv import load_dotenv
+import private 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-load_dotenv()
-
-EMAIL_USER = os.getenv("EMAIL_USER")
-EMAIL_PASS = os.getenv("EMAIL_PASS")
-EMAIL_RECV = os.getenv("EMAIL_RECV")
-
 def sendMails (body, subject="機車有名額時段"):
     # Email configuration
-    sender_email = EMAIL_USER 
-    password = EMAIL_PASS 
+    sender_email = private.EMAIL_USER 
+    password = private.EMAIL_PASS 
     
-    for receiver_email in EMAIL_RECV.split(";"):
+    for receiver_email in private.EMAIL_RECV.split(";"):
 
         # Compose the email
         message = MIMEMultipart()
