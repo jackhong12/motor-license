@@ -8,6 +8,7 @@ import private
 from sendmail import MailHandler
 from datetime import date
 from datetime import datetime
+from collections import defaultdict
 
 _licenseTypeCode = "普通重型機車"
 _expectExamDateStr = str(int(date.today().strftime("%Y")) - 1911) + date.today().strftime("%m%d")
@@ -39,22 +40,56 @@ wait = WebDriverWait(driver, 10) # Wait for 10 second at most
 
 isBooked = False
 
-def chineseDateToInt (chineseDate):
-    year = int(chineseDate.split("年")[0])
-    month = int(chineseDate.split("年")[1].split("月")[0])
-    day = int(chineseDate.split("月")[1].split("日")[0])
-    stryear = str(year)
-    if month < 10:
-        strmonth = "0" + str(month)
-    else:
-        strmonth = str(month)
-    if day < 10:
-        strday = "0" + str(day)
-    else:
-        strday = str(day)
-    return stryear + strmonth + strday
+class ExamInfo:
+    def __init__(self):
+        self.date = "" 
+        self.chineseDate = ""
+        self.description = ""
+        self.place = ""
+        self.number = "額滿" 
+        self.isBook = False
+        self.examType = False
+        self.cancelAction = ""
+        self.cancelDriver = None
+        self.bookingButton = None
+        self.bookingDriver = None
 
-def findExamRecord (isCancel = False):
+    def addChineseDate (self, date):
+        self.chineseDate = date
+        self.date = self.chineseDateToInt(date)
+
+    def chineseDateToInt (self, chineseDate):
+        year = int(chineseDate.split("年")[0])
+        month = int(chineseDate.split("年")[1].split("月")[0])
+        day = int(chineseDate.split("月")[1].split("日")[0])
+        stryear = str(year)
+        if month < 10:
+            strmonth = "0" + str(month)
+        else:
+            strmonth = str(month)
+        if day < 10:
+            strday = "0" + str(day)
+        else:
+            strday = str(day)
+        return stryear + strmonth + strday
+
+    def isAvaliable (self):
+        if self.isFirstTime():
+            return False
+        if self.number == "0":
+            return False
+        if self.number == "額滿":
+            return False
+        return True
+
+    def isFirstTime (self):
+        if self.description.find("本場次為初考") >= 0:
+            return True
+        return False
+
+def findExamRecord (driver):
+    wait = WebDriverWait(driver, 10) # Wait for 10 second at most
+
     # Go to exam record page
     driver.get("https://www.mvdis.gov.tw/m3-emv-trn/exm/query#gsc.tab=0")
     idInput = wait.until(EC.presence_of_element_located((By.ID, "idNo")))
@@ -65,7 +100,7 @@ def findExamRecord (isCancel = False):
     # Click on the "查詢報名紀錄" link
     driver.execute_script("query();")
 
-    record = {}
+    record = ExamInfo() 
     try:
         recordTable = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "tb_list_std.gap_b2.gap_t")))
         rows = recordTable.find_elements(By.TAG_NAME, "tr")
@@ -73,19 +108,16 @@ def findExamRecord (isCancel = False):
         cols = rows[1].find_elements(By.TAG_NAME, "td")
         assert len(cols) == 5
 
-        record['isBook'] = True
-        record['place'] = cols[0].text
-        record['type'] = cols[1].text
-        record['date'] = chineseDateToInt(cols[2].text)
-        record['desc'] = cols[3].text
+        record.isBook = True
+        record.place = cols[0].text
+        record.examType = cols[1].text
+        record.addChineseDate(cols[2].text)
+        record.description = cols[3].text
         cancelLinkTag = cols[4].find_element(By.TAG_NAME, "a")
-        record['cancelAction'] = cancelLinkTag.get_attribute("onclick")
-        import pdb; pdb.set_trace()
+        record.cancelAction = cancelLinkTag.get_attribute("onclick")
+        record.cancelDriver = driver
     except:
-        record['isBook'] = False
-
-    if isCancel and record['isBook']:
-        driver.execute_script(record['cancelAction'])
+        record.isBook = False
 
     return record
 
@@ -117,9 +149,10 @@ def signupExam (signupElement):
 
     return True
 
-def findAvailableDate (mail, location, isBook = False):
+def findAvailableDate (driver, location):
     # Open the website 
     driver.get("https://www.mvdis.gov.tw/m3-emv-trn/exm/locations")
+    wait = WebDriverWait(driver, 10) # Wait for 10 second at most
 
     # Fill the form:
     #   報考照類 Type of Test：
@@ -175,64 +208,64 @@ def findAvailableDate (mail, location, isBook = False):
         assert len(infos) == len(titles) 
         infos[1] = infos[1].replace("\n", " ")
 
-        data = {
-            'date':        infos[0],
-            'description': infos[1],
-            'number':      infos[2],
-            'avaliable':   False,
-            'link':        cols[3]
-        }
+        examInfo = ExamInfo()
+        examInfo.addChineseDate(infos[0])
+        examInfo.description = infos[1]
+        examInfo.place = location[1]
+        examInfo.number = infos[2]
+        examInfo.examType = "普通重型機車"
+        examInfo.bookingDriver = driver
+        examInfo.bookingButton = cols[3]
 
-        if infos[2] != "額滿" and infos[1].find("重考") >= 0:
-            avaliableDates += [data]
+        if examInfo.isAvaliable():
+            avaliableDates += [examInfo]
         else:
-            fullDates += [data]
+            fullDates += [examInfo]
+
+    return (avaliableDates, fullDates)
+    #if len(avaliableDates) > 0:
+    #    if isBook:
+    #        target = avaliableDates[0]
+    #        if signupExam(target['link']):
+    #            mail.textln(f"## 成功申請!!!!!")
+    #            mail.textln(f"- 地點: {location[1]}")
+    #            mail.textln(f"- 時間: {target['date']}")
+    #            mail.textln(f"- 名額: {target['number']}")
+    #            mail.textln(f"- 說明: {target['description']}")
+    #            mail.textln(f"- 身分: {_signupInfos['id']}")
+    #            mail.textln(f"- 名字: {_signupInfos['name']}")
+    #            mail.textln(f"- 生日: {_signupInfos['birth']}")
+    #            mail.textln(f"- 手機: {_signupInfos['phone']}")
+    #            mail.textln(f"- 信箱: {_signupInfos['email']}")
+    #            mail.textln("")
+
+    #    mail.textln(f"#### {location[1]}")
+    #if len(fullDates) > 0:
+    #    mail.textln(f"#### {location[1]}", False)
+
+    #for date in avaliableDates:
+    #    mail.textln(f"##### {date['date']}")
+    #    mail.textln(f"- 名額: {date['number']}")
+    #    mail.textln(f"- 說明: {date['description']}")
+    #    mail.textln("")
+
+    #for date in fullDates:
+    #    mail.textln(f"- {date['date']}", False)
+
+
+def findAllSites (driver):
+    #mail.textln("### 有名額時段:")
+    #mail.textln("### 額滿時段:", False)
     
-    if len(avaliableDates) > 0:
-        if isBook:
-            target = avaliableDates[0]
-            if signupExam(target['link']):
-                mail.textln(f"## 成功申請!!!!!")
-                mail.textln(f"- 地點: {location[1]}")
-                mail.textln(f"- 時間: {target['date']}")
-                mail.textln(f"- 名額: {target['number']}")
-                mail.textln(f"- 說明: {target['description']}")
-                mail.textln(f"- 身分: {_signupInfos['id']}")
-                mail.textln(f"- 名字: {_signupInfos['name']}")
-                mail.textln(f"- 生日: {_signupInfos['birth']}")
-                mail.textln(f"- 手機: {_signupInfos['phone']}")
-                mail.textln(f"- 信箱: {_signupInfos['email']}")
-                mail.textln("")
-
-        mail.textln(f"#### {location[1]}")
-    if len(fullDates) > 0:
-        mail.textln(f"#### {location[1]}", False)
-
-    for date in avaliableDates:
-        mail.textln(f"##### {date['date']}")
-        mail.textln(f"- 名額: {date['number']}")
-        mail.textln(f"- 說明: {date['description']}")
-        mail.textln("")
-
-    for date in fullDates:
-        mail.textln(f"- {date['date']}", False)
-
-
-def tryAllSites ():
-    mail = MailHandler()
-    mail.textln("### 有名額時段:")
-    mail.textln("### 額滿時段:", False)
-
+    avaliableExams = []
+    unavaliableExams = []
     for loc, details in _locations.items():
-        print(f"  - {details[1]}")
-        #findAvailableDate(mail, details, True)
-        findAvailableDate(mail, details, False)
+        avaliable, unavaliable = findAvailableDate(driver, details)
+        avaliableExams += avaliable
+        unavaliableExams += unavaliable
+        print(f"  - Parsing {details[1]} avaliable: {len(avaliable)}, full: {len(unavaliable)}")
 
-    mail.plain()
-    if isBooked:
-        mail.send()
-        return True
-    return False
+    return (avaliableExams, unavaliableExams)
 
 tmp="""
 while True:
@@ -242,6 +275,28 @@ while True:
     time.sleep(10 * 60) # every 10 sec
 """
 
-findExamRecord()
+def logUnavailableExams (unavaliableExams):
+    locationInfos = defaultdict(list) 
+    for exam in unavaliableExams:
+        desc = "初考" if exam.isFirstTime() else "重考"
+        locationInfos[exam.place].append(f"{exam.chineseDate} {desc} {exam.number}")
+
+    for location, dates in locationInfos.items():
+        print(f"### {location}")
+        for date in dates:
+            print(f"  - {date}")
+
+if __name__ == "__main__":
+    recordWebsite = webdriver.Chrome(options=options)
+    bookWebsite = webdriver.Chrome(options=options)
+    mail = MailHandler()
+
+    oldRecord = findExamRecord(recordWebsite)
+    avaliableExams, unavaliableExams = findAllSites(bookWebsite)
+
+    logUnavailableExams(unavaliableExams)
+
+    bookWebsite.quit()
+    recordWebsite.quit()
 
 driver.quit()
