@@ -3,5 +3,5 @@
 REPO_PATH=the_path_to_current_folder
 pushd $REPO_PATH
 source venv/bin/activate
-python available.py
+python book.py
 popd
