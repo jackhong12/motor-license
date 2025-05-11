@@ -33,11 +33,61 @@ _signupInfos = {
 
 # 設定 Selenium WebDriver（以 Chrome 為例）
 options = webdriver.ChromeOptions()
-options.add_argument('--headless')  # 無頭模式
+#options.add_argument('--headless')  # 無頭模式
 driver = webdriver.Chrome(options=options)
 wait = WebDriverWait(driver, 10) # Wait for 10 second at most
 
 isBooked = False
+
+def chineseDateToInt (chineseDate):
+    year = int(chineseDate.split("年")[0])
+    month = int(chineseDate.split("年")[1].split("月")[0])
+    day = int(chineseDate.split("月")[1].split("日")[0])
+    stryear = str(year)
+    if month < 10:
+        strmonth = "0" + str(month)
+    else:
+        strmonth = str(month)
+    if day < 10:
+        strday = "0" + str(day)
+    else:
+        strday = str(day)
+    return stryear + strmonth + strday
+
+def findExamRecord (isCancel = False):
+    # Go to exam record page
+    driver.get("https://www.mvdis.gov.tw/m3-emv-trn/exm/query#gsc.tab=0")
+    idInput = wait.until(EC.presence_of_element_located((By.ID, "idNo")))
+    idInput.send_keys(_signupInfos['id'])
+    birthInput = wait.until(EC.presence_of_element_located((By.ID, "birthdayStr")))
+    birthInput.send_keys(_signupInfos['birth'])
+
+    # Click on the "查詢報名紀錄" link
+    driver.execute_script("query();")
+
+    record = {}
+    try:
+        recordTable = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "tb_list_std.gap_b2.gap_t")))
+        rows = recordTable.find_elements(By.TAG_NAME, "tr")
+        assert len(rows) == 2
+        cols = rows[1].find_elements(By.TAG_NAME, "td")
+        assert len(cols) == 5
+
+        record['isBook'] = True
+        record['place'] = cols[0].text
+        record['type'] = cols[1].text
+        record['date'] = chineseDateToInt(cols[2].text)
+        record['desc'] = cols[3].text
+        cancelLinkTag = cols[4].find_element(By.TAG_NAME, "a")
+        record['cancelAction'] = cancelLinkTag.get_attribute("onclick")
+        import pdb; pdb.set_trace()
+    except:
+        record['isBook'] = False
+
+    if isCancel and record['isBook']:
+        driver.execute_script(record['cancelAction'])
+
+    return record
 
 def signupExam (signupElement):
     global isBooked
@@ -184,10 +234,14 @@ def tryAllSites ():
         return True
     return False
 
+tmp="""
 while True:
     print(f"\n-> {datetime.now()}")
     if tryAllSites():
         break
     time.sleep(10 * 60) # every 10 sec
+"""
+
+findExamRecord()
 
 driver.quit()
