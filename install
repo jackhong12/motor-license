@@ -1,0 +1,8 @@
+#!bash
+
+py=python3.12
+
+$py -m venv venv
+source venv/bin/active
+pip3 install -r ./requirements.txt
+sed -i "s|^REPO_PATH=.*|REPO_PATH=$(pwd)|" run
