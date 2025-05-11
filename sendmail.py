@@ -43,7 +43,7 @@ class MailHandler:
         html = markdown.markdown(fullContent)
         self.send_impl(html)
 
-    def send_impl (self, txt, subject="機車有名額時段"):
+    def send_impl (self, txt, subject="機車路考預約"):
         # Email configuration
         sender_email = private.EMAIL_USER 
         password = private.EMAIL_PASS 

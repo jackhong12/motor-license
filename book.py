@@ -138,12 +138,15 @@ def findExamRecord (chromeTab):
 
     return record
 
-def signupExam (signupElement):
-    global isBooked
-    if isBooked:
-        return False
+def cancelExam (examInfo):
+    driver, wait = examInfo.cancelTab.moveToCurrentTab()
+    driver.execute_script(examInfo.cancelAction)
+
+def signupExam (examInfo):
+    driver, wait = examInfo.bookingTab.moveToCurrentTab()
+
     # Go to signup link
-    signupLinkTag = signupElement.find_element(By.TAG_NAME, "a")
+    signupLinkTag = examInfo.bookingButton.find_element(By.TAG_NAME, "a")
     signupLink = signupLinkTag.get_attribute("onclick")
     driver.execute_script(signupLink)
     # Get rid of block UI
@@ -162,9 +165,6 @@ def signupExam (signupElement):
     emailInput = wait.until(EC.presence_of_element_located((By.ID, "email")))
     emailInput.send_keys(_signupInfos['email'])
     driver.execute_script("add()")
-    isBooked = True
-
-    return True
 
 def findAvailableDate (station):
     chromeTab = station.chromeTab
@@ -189,7 +189,6 @@ def findAvailableDate (station):
     stationSelect = Select(wait.until(EC.presence_of_element_located((By.ID, "dmvNo"))))
     stationSelect.select_by_visible_text(station.place)
     
-    #import pdb; pdb.set_trace()
     # Submit the form and get avaliable dates.
     driver.execute_script("query()")
 
@@ -242,35 +241,6 @@ def findAvailableDate (station):
             fullDates += [examInfo]
 
     return (avaliableDates, fullDates)
-    #if len(avaliableDates) > 0:
-    #    if isBook:
-    #        target = avaliableDates[0]
-    #        if signupExam(target['link']):
-    #            mail.textln(f"## 成功申請!!!!!")
-    #            mail.textln(f"- 地點: {location[1]}")
-    #            mail.textln(f"- 時間: {target['date']}")
-    #            mail.textln(f"- 名額: {target['number']}")
-    #            mail.textln(f"- 說明: {target['description']}")
-    #            mail.textln(f"- 身分: {_signupInfos['id']}")
-    #            mail.textln(f"- 名字: {_signupInfos['name']}")
-    #            mail.textln(f"- 生日: {_signupInfos['birth']}")
-    #            mail.textln(f"- 手機: {_signupInfos['phone']}")
-    #            mail.textln(f"- 信箱: {_signupInfos['email']}")
-    #            mail.textln("")
-
-    #    mail.textln(f"#### {location[1]}")
-    #if len(fullDates) > 0:
-    #    mail.textln(f"#### {location[1]}", False)
-
-    #for date in avaliableDates:
-    #    mail.textln(f"##### {date['date']}")
-    #    mail.textln(f"- 名額: {date['number']}")
-    #    mail.textln(f"- 說明: {date['description']}")
-    #    mail.textln("")
-
-    #for date in fullDates:
-    #    mail.textln(f"- {date['date']}", False)
-
 
 def findAllSites (stations):
     avaliableExams = []
@@ -282,14 +252,6 @@ def findAllSites (stations):
         print(f"  - Parsing {station.place} avaliable: {len(avaliable)}, full: {len(unavaliable)}")
 
     return (avaliableExams, unavaliableExams)
-
-tmp="""
-while True:
-    print(f"\n-> {datetime.now()}")
-    if tryAllSites():
-        break
-    time.sleep(10 * 60) # every 10 sec
-"""
 
 def logUnavailableExams (unavaliableExams):
     locationInfos = defaultdict(list) 
@@ -305,15 +267,26 @@ def logUnavailableExams (unavaliableExams):
 def isExamEarlier (exam1, exam2):
     if int(exam1.date) < int(exam2.date):
         return True
+    return False
 
 def bookExam(oldRecord, avaliableExams):
     if len(avaliableExams) == 0:
-        return False
+        return None
 
     # Book the first available exam
     exam = avaliableExams[0]
-    if oldRecord.isBook and isExamEarlier(oldRecord, exam):
-        return False
+    if oldRecord.isBook:
+        if isExamEarlier(exam, oldRecord):
+            # Cancel the booked exam
+            print(f"  - Canceling {oldRecord.place} {oldRecord.chineseDate}")
+            cancelExam(oldRecord)
+        else:
+            return None
+
+    # Book the new exam
+    print(f"  - Booking {exam.place} {exam.chineseDate}")
+    signupExam(exam)
+    return exam
 
 if __name__ == "__main__":
     options = webdriver.ChromeOptions()
@@ -323,12 +296,24 @@ if __name__ == "__main__":
     recordTab = ChromeTab(driver)
     for station in stations:
         station.setChromeTab(driver)
-    mail = MailHandler()
+    while True:
+        print(f"\n-> {datetime.now()}")
+        oldRecord = findExamRecord(recordTab)
+        avaliableExams, unavaliableExams = findAllSites(stations)
+        bookedExam = bookExam(oldRecord, avaliableExams)
+        if bookedExam:
+            mail = MailHandler()
+            mail.textln(f"## 路考申請成功!!!!!")
+            mail.textln(f"- 地點: {bookedExam.place}")
+            mail.textln(f"- 時段: {bookedExam.chineseDate}")
+            mail.textln(f"- 說明: {bookedExam.description}")
+            if oldRecord.isBook:
+                mail.textln(f"- 取消以下場次: {oldRecord.place} {oldRecord.chineseDate}")
+            mail.plain()
+            print(f"  - Sending email to {private.EMAIL_RECV}")
+            mail.send()
 
-    oldRecord = findExamRecord(recordTab)
-    avaliableExams, unavaliableExams = findAllSites(stations)
-    bookExam(oldRecord, avaliableExams)
-
-    logUnavailableExams(unavaliableExams)
+        #logUnavailableExams(unavaliableExams)
+        time.sleep(10 * 60) # every 10 min
 
     driver.quit()
