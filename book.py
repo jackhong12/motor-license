@@ -57,6 +57,10 @@ class ChromeTab:
         wait = WebDriverWait(self.driver, self.waitSeconds)
         return (self.driver, wait)
 
+    def resetWeb (self):
+        self.moveToCurrentTab()
+        self.driver.get("https://google.com")
+
 class ExamInfo:
     def __init__(self):
         self.date = "" 
@@ -311,24 +315,35 @@ if __name__ == "__main__":
     recordTab = ChromeTab(driver)
     for station in stations:
         station.setChromeTab(driver)
-    while True:
-        print(f"\n-> {datetime.now()}")
-        oldRecord = findExamRecord(recordTab)
-        avaliableExams, unavaliableExams = findAllSites(stations)
-        bookedExam = bookExam(oldRecord, avaliableExams)
-        if bookedExam:
-            mail = MailHandler()
-            mail.textln(f"## 路考申請成功!!!!!")
-            mail.textln(f"- 地點: {bookedExam.place}")
-            mail.textln(f"- 時段: {bookedExam.chineseDate}")
-            mail.textln(f"- 說明: {bookedExam.description}")
-            if oldRecord.isBook:
-                mail.textln(f"- 取消以下場次: {oldRecord.place} {oldRecord.chineseDate}")
-            mail.plain()
-            print(f"  - Sending email to {private.EMAIL_RECV}")
-            mail.send()
 
-        #logUnavailableExams(unavaliableExams)
-        time.sleep(10 * 60) # every 10 min
+    try:
+        while True:
+            recordTab.resetWeb()
+            for station in stations:
+                station.chromeTab.resetWeb()
+
+            print(f"\n-> {datetime.now()}")
+            oldRecord = findExamRecord(recordTab)
+            avaliableExams, unavaliableExams = findAllSites(stations)
+            bookedExam = bookExam(oldRecord, avaliableExams)
+            if bookedExam:
+                mail = MailHandler()
+                mail.textln(f"## 路考申請成功!!!!!")
+                mail.textln(f"- 地點: {bookedExam.place}")
+                mail.textln(f"- 時段: {bookedExam.chineseDate}")
+                mail.textln(f"- 說明: {bookedExam.description}")
+                if oldRecord.isBook:
+                    mail.textln(f"- 取消以下場次: {oldRecord.place} {oldRecord.chineseDate}")
+                mail.plain()
+                print(f"  - Sending email to {private.EMAIL_RECV}")
+                mail.send()
+
+            #logUnavailableExams(unavaliableExams)
+            time.sleep(60) # every 10 min
+    except:
+        mail = MailHandler()
+        mail.textln(f"## Process crashed!!!!!")
+        mail.textln(f"Please check the log.")
+        mail.send()
 
     driver.quit()
