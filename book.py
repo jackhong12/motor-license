@@ -25,10 +25,10 @@ class Station:
 
 stations = []
 stations += [Station("板橋", "臺北區監理所（北宜花）", "板橋監理站(新北市中和區中山路三段116號)")]
-stations += [Station("士林", "臺北市區監理所（含金門馬祖）", "士林監理站(臺北市士林區承德路5段80號)")]
+#stations += [Station("士林", "臺北市區監理所（含金門馬祖）", "士林監理站(臺北市士林區承德路5段80號)")]
 #stations += [Station("基隆", "臺北市區監理所（含金門馬祖）", "基隆監理站(基隆市七堵區實踐路296號)")]
 #stations += [Station("金門", "臺北市區監理所（含金門馬祖）", "金門監理站(金門縣金湖鎮黃海路六之一號)")]
-stations += [Station("漣江", "臺北市區監理所（含金門馬祖）", "連江監理站(連江縣南竿鄉津沙村155號)")]
+#stations += [Station("漣江", "臺北市區監理所（含金門馬祖）", "連江監理站(連江縣南竿鄉津沙村155號)")]
 #stations += [Station("樹林", "臺北區監理所（北宜花）", "臺北區監理所(新北市樹林區中正路248巷7號)")]
 #stations += [Station("蘆洲", "臺北區監理所（北宜花）", "蘆洲監理站(新北市蘆洲區中山二路163號)")]
 #stations += [Station("屏東", "高雄區監理所（高屏澎東）", "屏東監理站(屏東市忠孝路222號)")]
@@ -142,6 +142,16 @@ def cancelExam (examInfo):
     driver, wait = examInfo.cancelTab.moveToCurrentTab()
     driver.execute_script(examInfo.cancelAction)
 
+    # Wait until the alert is shown
+    wait.until(EC.alert_is_present())
+    alert = driver.switch_to.alert
+    alert.accept()
+    
+    # Click OK again
+    wait.until(EC.alert_is_present())
+    alert = driver.switch_to.alert
+    alert.accept()
+
 def signupExam (examInfo):
     driver, wait = examInfo.bookingTab.moveToCurrentTab()
 
@@ -165,6 +175,11 @@ def signupExam (examInfo):
     emailInput = wait.until(EC.presence_of_element_located((By.ID, "email")))
     emailInput.send_keys(_signupInfos['email'])
     driver.execute_script("add()")
+
+    # Click OK
+    wait.until(EC.alert_is_present())
+    alert = driver.switch_to.alert
+    alert.accept()
 
 def findAvailableDate (station):
     chromeTab = station.chromeTab
