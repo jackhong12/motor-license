@@ -1,4 +1,4 @@
-#!bash
+#!/usr/bin/env bash
 
 REPO_PATH=the_path_to_current_folder
 pushd $REPO_PATH

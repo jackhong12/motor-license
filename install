@@ -1,4 +1,4 @@
-#!bash
+#!/usr/bin/env bash
 
 py=python3.12
 
