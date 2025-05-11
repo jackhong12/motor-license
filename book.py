@@ -12,17 +12,27 @@ from collections import defaultdict
 
 _licenseTypeCode = "普通重型機車"
 _expectExamDateStr = str(int(date.today().strftime("%Y")) - 1911) + date.today().strftime("%m%d")
-_locations = {
-    "板橋": ["臺北區監理所（北宜花）",        "板橋監理站(新北市中和區中山路三段116號)"],
-    #"士林": ["臺北市區監理所（含金門馬祖）",  "士林監理站(臺北市士林區承德路5段80號)"],
-    #"基隆": ["臺北市區監理所（含金門馬祖）",  "基隆監理站(基隆市七堵區實踐路296號)"],
-    #"金門": ["臺北市區監理所（含金門馬祖）",  "金門監理站(金門縣金湖鎮黃海路六之一號)"],
-    #"漣江": ["臺北市區監理所（含金門馬祖）",   "連江監理站(連江縣南竿鄉津沙村155號)"],
-    #"樹林": ["臺北區監理所（北宜花）",        "臺北區監理所(新北市樹林區中正路248巷7號)"],
-    #"蘆洲": ["臺北區監理所（北宜花）",        "蘆洲監理站(新北市蘆洲區中山二路163號)"],
-    #"屏東": ["高雄區監理所（高屏澎東）",      "屏東監理站(屏東市忠孝路222號)"],
-    #"恆春": ["高雄區監理所（高屏澎東）",      "恆春監理分站(屏東縣恒春鎮草埔路11號)"],
-}
+
+class Station:
+    def __init__ (self, name, region, place):
+        self.region = region
+        self.place = place 
+        self.name = name
+        self.chromeTab = None
+
+    def setChromeTab (self, chrome):
+        self.chromeTab = ChromeTab(chrome) 
+
+stations = []
+stations += [Station("板橋", "臺北區監理所（北宜花）", "板橋監理站(新北市中和區中山路三段116號)")]
+stations += [Station("士林", "臺北市區監理所（含金門馬祖）", "士林監理站(臺北市士林區承德路5段80號)")]
+#stations += [Station("基隆", "臺北市區監理所（含金門馬祖）", "基隆監理站(基隆市七堵區實踐路296號)")]
+#stations += [Station("金門", "臺北市區監理所（含金門馬祖）", "金門監理站(金門縣金湖鎮黃海路六之一號)")]
+stations += [Station("漣江", "臺北市區監理所（含金門馬祖）", "連江監理站(連江縣南竿鄉津沙村155號)")]
+#stations += [Station("樹林", "臺北區監理所（北宜花）", "臺北區監理所(新北市樹林區中正路248巷7號)")]
+#stations += [Station("蘆洲", "臺北區監理所（北宜花）", "蘆洲監理站(新北市蘆洲區中山二路163號)")]
+#stations += [Station("屏東", "高雄區監理所（高屏澎東）", "屏東監理站(屏東市忠孝路222號)")]
+#stations += [Station("恆春", "高雄區監理所（高屏澎東）", "恆春監理分站(屏東縣恒春鎮草埔路11號)")]
 
 _signupInfos = {
     'id':    private.SIGNUP_ID,
@@ -32,13 +42,20 @@ _signupInfos = {
     'email': private.SIGNUP_EMAIL,
 }
 
-# 設定 Selenium WebDriver（以 Chrome 為例）
-options = webdriver.ChromeOptions()
-#options.add_argument('--headless')  # 無頭模式
-driver = webdriver.Chrome(options=options)
-wait = WebDriverWait(driver, 10) # Wait for 10 second at most
-
 isBooked = False
+
+
+class ChromeTab:
+    def __init__ (self, driver, waitSeconds=10):
+        self.driver = driver
+        self.waitSeconds = 10
+        self.driver.execute_script("window.open('https://google.com', '_blank');")
+        self.current_tab = self.driver.window_handles[-1]
+
+    def moveToCurrentTab (self):
+        self.driver.switch_to.window(self.current_tab)
+        wait = WebDriverWait(self.driver, self.waitSeconds)
+        return (self.driver, wait)
 
 class ExamInfo:
     def __init__(self):
@@ -50,9 +67,9 @@ class ExamInfo:
         self.isBook = False
         self.examType = False
         self.cancelAction = ""
-        self.cancelDriver = None
+        self.cancelTab = None
         self.bookingButton = None
-        self.bookingDriver = None
+        self.bookingTab = None
 
     def addChineseDate (self, date):
         self.chineseDate = date
@@ -87,8 +104,8 @@ class ExamInfo:
             return True
         return False
 
-def findExamRecord (driver):
-    wait = WebDriverWait(driver, 10) # Wait for 10 second at most
+def findExamRecord (chromeTab):
+    driver, wait = chromeTab.moveToCurrentTab()
 
     # Go to exam record page
     driver.get("https://www.mvdis.gov.tw/m3-emv-trn/exm/query#gsc.tab=0")
@@ -115,7 +132,7 @@ def findExamRecord (driver):
         record.description = cols[3].text
         cancelLinkTag = cols[4].find_element(By.TAG_NAME, "a")
         record.cancelAction = cancelLinkTag.get_attribute("onclick")
-        record.cancelDriver = driver
+        record.cancelTab = chromeTab 
     except:
         record.isBook = False
 
@@ -149,10 +166,12 @@ def signupExam (signupElement):
 
     return True
 
-def findAvailableDate (driver, location):
+def findAvailableDate (station):
+    chromeTab = station.chromeTab
+    driver, wait = chromeTab.moveToCurrentTab()
+
     # Open the website 
     driver.get("https://www.mvdis.gov.tw/m3-emv-trn/exm/locations")
-    wait = WebDriverWait(driver, 10) # Wait for 10 second at most
 
     # Fill the form:
     #   報考照類 Type of Test：
@@ -165,10 +184,10 @@ def findAvailableDate (driver, location):
     examDateInput.send_keys(_expectExamDateStr)
 
     regionSelect = Select(wait.until(EC.presence_of_element_located((By.ID, "dmvNoLv1"))))
-    regionSelect.select_by_visible_text(location[0])
+    regionSelect.select_by_visible_text(station.region)
 
     stationSelect = Select(wait.until(EC.presence_of_element_located((By.ID, "dmvNo"))))
-    stationSelect.select_by_visible_text(location[1])
+    stationSelect.select_by_visible_text(station.place)
     
     #import pdb; pdb.set_trace()
     # Submit the form and get avaliable dates.
@@ -211,10 +230,10 @@ def findAvailableDate (driver, location):
         examInfo = ExamInfo()
         examInfo.addChineseDate(infos[0])
         examInfo.description = infos[1]
-        examInfo.place = location[1]
+        examInfo.place = station.place 
         examInfo.number = infos[2]
         examInfo.examType = "普通重型機車"
-        examInfo.bookingDriver = driver
+        examInfo.bookingTab = chromeTab 
         examInfo.bookingButton = cols[3]
 
         if examInfo.isAvaliable():
@@ -253,17 +272,14 @@ def findAvailableDate (driver, location):
     #    mail.textln(f"- {date['date']}", False)
 
 
-def findAllSites (driver):
-    #mail.textln("### 有名額時段:")
-    #mail.textln("### 額滿時段:", False)
-    
+def findAllSites (stations):
     avaliableExams = []
     unavaliableExams = []
-    for loc, details in _locations.items():
-        avaliable, unavaliable = findAvailableDate(driver, details)
+    for station in stations:
+        avaliable, unavaliable = findAvailableDate(station)
         avaliableExams += avaliable
         unavaliableExams += unavaliable
-        print(f"  - Parsing {details[1]} avaliable: {len(avaliable)}, full: {len(unavaliable)}")
+        print(f"  - Parsing {station.place} avaliable: {len(avaliable)}, full: {len(unavaliable)}")
 
     return (avaliableExams, unavaliableExams)
 
@@ -286,17 +302,33 @@ def logUnavailableExams (unavaliableExams):
         for date in dates:
             print(f"  - {date}")
 
+def isExamEarlier (exam1, exam2):
+    if int(exam1.date) < int(exam2.date):
+        return True
+
+def bookExam(oldRecord, avaliableExams):
+    if len(avaliableExams) == 0:
+        return False
+
+    # Book the first available exam
+    exam = avaliableExams[0]
+    if oldRecord.isBook and isExamEarlier(oldRecord, exam):
+        return False
+
 if __name__ == "__main__":
-    recordWebsite = webdriver.Chrome(options=options)
-    bookWebsite = webdriver.Chrome(options=options)
+    options = webdriver.ChromeOptions()
+    #options.add_argument('--headless')  # 無頭模式
+    driver = webdriver.Chrome(options=options)
+
+    recordTab = ChromeTab(driver)
+    for station in stations:
+        station.setChromeTab(driver)
     mail = MailHandler()
 
-    oldRecord = findExamRecord(recordWebsite)
-    avaliableExams, unavaliableExams = findAllSites(bookWebsite)
+    oldRecord = findExamRecord(recordTab)
+    avaliableExams, unavaliableExams = findAllSites(stations)
+    bookExam(oldRecord, avaliableExams)
 
     logUnavailableExams(unavaliableExams)
 
-    bookWebsite.quit()
-    recordWebsite.quit()
-
-driver.quit()
+    driver.quit()
