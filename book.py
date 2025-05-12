@@ -9,6 +9,7 @@ from sendmail import MailHandler
 from datetime import date
 from datetime import datetime
 from collections import defaultdict
+from logsystem import info, debug
 
 _licenseTypeCode = "普通重型機車"
 _expectExamDateStr = str(int(date.today().strftime("%Y")) - 1911) + date.today().strftime("%m%d")
@@ -268,7 +269,7 @@ def findAllSites (stations):
         avaliable, unavaliable = findAvailableDate(station)
         avaliableExams += avaliable
         unavaliableExams += unavaliable
-        print(f"  - Parsing {station.place} avaliable: {len(avaliable)}, full: {len(unavaliable)}")
+        debug(f"Parsing {station.place} avaliable: {len(avaliable)}, full: {len(unavaliable)}")
 
     return (avaliableExams, unavaliableExams)
 
@@ -278,10 +279,13 @@ def logUnavailableExams (unavaliableExams):
         desc = "初考" if exam.isFirstTime() else "重考"
         locationInfos[exam.place].append(f"{exam.chineseDate} {desc} {exam.number}")
 
+    text = f"Detail Information:\n"
+    indent = "\t" * 5
     for location, dates in locationInfos.items():
-        print(f"### {location}")
+        text += f"{indent}- {location}\n"
         for date in dates:
-            print(f"  - {date}")
+            text += f"{indent}\t- {date}\n"
+    debug(text)
 
 def isExamEarlier (exam1, exam2):
     if int(exam1.date) < int(exam2.date):
@@ -297,19 +301,20 @@ def bookExam(oldRecord, avaliableExams):
     if oldRecord.isBook:
         if isExamEarlier(exam, oldRecord):
             # Cancel the booked exam
-            print(f"  - Canceling {oldRecord.place} {oldRecord.chineseDate}")
+            info(f"Canceling the old exam {oldRecord.place} {oldRecord.chineseDate}")
             cancelExam(oldRecord)
         else:
             return None
 
     # Book the new exam
-    print(f"  - Booking {exam.place} {exam.chineseDate}")
+    info(f"Booking the exam {exam.place} {exam.chineseDate}")
     signupExam(exam)
     return exam
 
 if __name__ == "__main__":
+    info("Start booking system")
     options = webdriver.ChromeOptions()
-    #options.add_argument('--headless')  # 無頭模式
+    options.add_argument('--headless')  # 無頭模式
     driver = webdriver.Chrome(options=options)
 
     recordTab = ChromeTab(driver)
@@ -318,15 +323,16 @@ if __name__ == "__main__":
 
     try:
         while True:
+            info(f"New Parsing")
             recordTab.resetWeb()
             for station in stations:
                 station.chromeTab.resetWeb()
 
-            print(f"\n-> {datetime.now()}")
             oldRecord = findExamRecord(recordTab)
             avaliableExams, unavaliableExams = findAllSites(stations)
             bookedExam = bookExam(oldRecord, avaliableExams)
             if bookedExam:
+                info(f"Booking Success: Sending email to {private.EMAIL_RECV}")
                 mail = MailHandler()
                 mail.textln(f"## 路考申請成功!!!!!")
                 mail.textln(f"- 地點: {bookedExam.place}")
@@ -335,12 +341,13 @@ if __name__ == "__main__":
                 if oldRecord.isBook:
                     mail.textln(f"- 取消以下場次: {oldRecord.place} {oldRecord.chineseDate}")
                 mail.plain()
-                print(f"  - Sending email to {private.EMAIL_RECV}")
                 mail.send()
 
-            #logUnavailableExams(unavaliableExams)
-            time.sleep(60) # every 10 min
+            logUnavailableExams(unavaliableExams)
+            debug("====================== Parsing Finished ======================\n")
+            time.sleep(10 * 60) # every 10 min
     except:
+        info("Process crashed. Sending email.")
         mail = MailHandler()
         mail.textln(f"## Process crashed!!!!!")
         mail.textln(f"Please check the log.")

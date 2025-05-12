@@ -3,6 +3,7 @@ import markdown
 import private 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from logsystem import info, debug
 
 class MailHandler:
     def __init__ (self):
@@ -64,9 +65,9 @@ class MailHandler:
                 with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                     server.login(sender_email, password)
                     server.sendmail(sender_email, receiver_email, message.as_string())
-                print(f"Email sent to {receiver_email} successfully!")
+                info(f"Email sent to {receiver_email} successfully!")
             except Exception as e:
-                print(f"Error: {e}")
+                info(f"Error: {e}")
 
 if __name__ == '__main__':
     mail = MailHandler()
