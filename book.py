@@ -10,6 +10,7 @@ from datetime import date
 from datetime import datetime
 from collections import defaultdict
 from logsystem import info, debug
+import traceback
 
 _licenseTypeCode = "普通重型機車"
 _expectExamDateStr = str(int(date.today().strftime("%Y")) - 1911) + date.today().strftime("%m%d")
@@ -328,8 +329,11 @@ if __name__ == "__main__":
             for station in stations:
                 station.chromeTab.resetWeb()
 
+            debug("Find old record")
             oldRecord = findExamRecord(recordTab)
+            debug("Parse old exam")
             avaliableExams, unavaliableExams = findAllSites(stations)
+            debug("Book exam")
             bookedExam = bookExam(oldRecord, avaliableExams)
             if bookedExam:
                 info(f"Booking Success: Sending email to {private.EMAIL_RECV}")
@@ -347,6 +351,8 @@ if __name__ == "__main__":
             debug("====================== Parsing Finished ======================\n")
             time.sleep(10 * 60) # every 10 min
     except:
+        stack_str = traceback.format_exc()
+        info(f"Stack Trace: {stack_str}")
         info("Process crashed. Sending email.")
         mail = MailHandler()
         mail.textln(f"## Process crashed!!!!!")
