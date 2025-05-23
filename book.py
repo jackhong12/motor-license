@@ -11,6 +11,7 @@ from datetime import datetime
 from collections import defaultdict
 from logsystem import info, debug
 import traceback
+import sys
 
 _licenseTypeCode = "普通重型機車"
 _expectExamDateStr = str(int(date.today().strftime("%Y")) - 1911) + date.today().strftime("%m%d")
@@ -26,11 +27,11 @@ class Station:
         self.chromeTab = ChromeTab(chrome) 
 
 stations = []
-stations += [Station("板橋", "臺北區監理所（北宜花）", "板橋監理站(新北市中和區中山路三段116號)")]
+#stations += [Station("板橋", "臺北區監理所（北宜花）", "板橋監理站(新北市中和區中山路三段116號)")]
 #stations += [Station("士林", "臺北市區監理所（含金門馬祖）", "士林監理站(臺北市士林區承德路5段80號)")]
 #stations += [Station("基隆", "臺北市區監理所（含金門馬祖）", "基隆監理站(基隆市七堵區實踐路296號)")]
 #stations += [Station("金門", "臺北市區監理所（含金門馬祖）", "金門監理站(金門縣金湖鎮黃海路六之一號)")]
-#stations += [Station("漣江", "臺北市區監理所（含金門馬祖）", "連江監理站(連江縣南竿鄉津沙村155號)")]
+stations += [Station("漣江", "臺北市區監理所（含金門馬祖）", "連江監理站(連江縣南竿鄉津沙村155號)")]
 #stations += [Station("樹林", "臺北區監理所（北宜花）", "臺北區監理所(新北市樹林區中正路248巷7號)")]
 #stations += [Station("蘆洲", "臺北區監理所（北宜花）", "蘆洲監理站(新北市蘆洲區中山二路163號)")]
 #stations += [Station("屏東", "高雄區監理所（高屏澎東）", "屏東監理站(屏東市忠孝路222號)")]
@@ -182,8 +183,24 @@ def signupExam (examInfo):
     emailInput.send_keys(_signupInfos['email'])
     driver.execute_script("add()")
 
+    wait.until(lambda d:
+        EC.alert_is_present()(d) or
+        d.find_element(By.ID, "headerMessage").text != ""
+    )
+
+    showmsg = driver.find_element(By.ID, "headerMessage").text 
+    if showmsg != "":
+        info(f"Booking error (Blocking by issues): {showmsg}")
+        mail = MailHandler()
+        if showmsg.find("查無有效機車危險感知體驗紀錄") >= 0:
+            mail.textln(f"查無有效機車危險感知體驗紀錄，請至「機車危險感知教育平台」完成體驗始得報名!!!!!")
+            mail.textln(f"- Link: https://hpt.thb.gov.tw/reserve/index")
+        else:
+            mail.textln(f"Booking error (Blocking by issues): {showmsg}")
+        mail.send()
+        sys.exit(1)
+
     # Click OK
-    wait.until(EC.alert_is_present())
     alert = driver.switch_to.alert
     alert.accept()
 
@@ -315,7 +332,7 @@ def bookExam(oldRecord, avaliableExams):
 if __name__ == "__main__":
     info("Start booking system")
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # 無頭模式
+    #options.add_argument('--headless')  # 無頭模式
     driver = webdriver.Chrome(options=options)
 
     recordTab = ChromeTab(driver)
@@ -357,6 +374,8 @@ if __name__ == "__main__":
         mail = MailHandler()
         mail.textln(f"## Process crashed!!!!!")
         mail.textln(f"Please check the log.")
+        mail.textln(f"Called Stack:")
+        mail.textln(f"{stack_str}")
         mail.send()
 
     driver.quit()
