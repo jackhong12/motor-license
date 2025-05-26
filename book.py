@@ -126,20 +126,32 @@ def findExamRecord (chromeTab):
 
     record = ExamInfo() 
     try:
-        recordTable = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "tb_list_std.gap_b2.gap_t")))
-        rows = recordTable.find_elements(By.TAG_NAME, "tr")
-        assert len(rows) == 2
-        cols = rows[1].find_elements(By.TAG_NAME, "td")
-        assert len(cols) == 5
+        recordTable = wait.until(lambda d:
+            d.find_element(By.ID, "headerMessage").text != "" or
+            EC.presence_of_element_located((By.CLASS_NAME, "tb_list_std.gap_b2.gap_t"))
+        )
+        showmsg = driver.find_element(By.ID, "headerMessage").text 
+        if showmsg != "":
+            if showmsg.find("已查無報名資料，可「新增報名」") == -1:
+                info(f"findExamRecord() error: {showmsg}")
+            else:
+                debug("無報名資料")
+            record.isBook = False
 
-        record.isBook = True
-        record.place = cols[0].text
-        record.examType = cols[1].text
-        record.addChineseDate(cols[2].text)
-        record.description = cols[3].text
-        cancelLinkTag = cols[4].find_element(By.TAG_NAME, "a")
-        record.cancelAction = cancelLinkTag.get_attribute("onclick")
-        record.cancelTab = chromeTab 
+        else:
+            rows = recordTable.find_elements(By.TAG_NAME, "tr")
+            assert len(rows) == 2
+            cols = rows[1].find_elements(By.TAG_NAME, "td")
+            assert len(cols) == 5
+
+            record.isBook = True
+            record.place = cols[0].text
+            record.examType = cols[1].text
+            record.addChineseDate(cols[2].text)
+            record.description = cols[3].text
+            cancelLinkTag = cols[4].find_element(By.TAG_NAME, "a")
+            record.cancelAction = cancelLinkTag.get_attribute("onclick")
+            record.cancelTab = chromeTab 
     except:
         record.isBook = False
 
