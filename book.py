@@ -43,10 +43,8 @@ _signupInfos = {
     'name':  private.SIGNUP_NAME,
     'phone': private.SIGNUP_PHONE,
     'email': private.SIGNUP_EMAIL,
+    'isFirst': private.SIGNUP_IS_FIRST,
 }
-
-isBooked = False
-
 
 class ChromeTab:
     def __init__ (self, driver, waitSeconds=10):
@@ -99,7 +97,12 @@ class ExamInfo:
 
     def isAvaliable (self):
         if self.isFirstTime():
-            return False
+            if not _signupInfos['isFirst']:
+                return False
+        else:
+            if _signupInfos['isFirst']:
+                return False
+
         if self.number == "0":
             return False
         if self.number == "額滿":
@@ -341,8 +344,21 @@ def bookExam(oldRecord, avaliableExams):
     signupExam(exam)
     return exam
 
+def printInfo ():
+    mail = MailHandler()
+    mail.textln(f"## Started Server!!!!!")
+    mail.textln(f"ID: {_signupInfos['id']}")
+    mail.textln(f"Birth: {_signupInfos['birth']}")
+    mail.textln(f"Name: {_signupInfos['name']}")
+    mail.textln(f"Phone: {_signupInfos['phone']}")
+    mail.textln(f"Email: {_signupInfos['email']}")
+    mail.textln(f"Is First: {_signupInfos['isFirst']}")
+    mail.send()
+
 if __name__ == "__main__":
     info("Start booking system")
+    printInfo()
+
     options = webdriver.ChromeOptions()
     #options.add_argument('--headless')  # 無頭模式
     driver = webdriver.Chrome(options=options)
