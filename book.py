@@ -353,6 +353,11 @@ def printInfo ():
     mail.textln(f"Phone: {_signupInfos['phone']}")
     mail.textln(f"Email: {_signupInfos['email']}")
     mail.textln(f"Is First: {_signupInfos['isFirst']}")
+
+    stationStr = ""
+    for station in stations:
+        stationStr += f" {station.name}"
+    mail.textln(f"Station:{stationStr}")
     mail.send()
 
 if __name__ == "__main__":
