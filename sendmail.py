@@ -41,7 +41,7 @@ class MailHandler:
     def send (self):
         fullContent = self.content1 + "\n---\n"
         fullContent += self.content2
-        fullContent.replace("\n", "\n  ")
+        fullContent = fullContent.replace("\n", "  \n")
         html = markdown.markdown(fullContent)
         self.send_impl(html)
 
