@@ -395,6 +395,8 @@ if __name__ == "__main__":
             logUnavailableExams(unavaliableExams)
             debug("====================== Parsing Finished ======================\n")
             time.sleep(10 * 60) # every 10 min
+    except KeyboardInterrupt:
+        info("Process interrupted by user.")
     except:
         stack_str = traceback.format_exc()
         info(f"Stack Trace: {stack_str}")
