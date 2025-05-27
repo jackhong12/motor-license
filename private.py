@@ -13,6 +13,7 @@ SIGNUP_BIRTH = os.getenv("SIGNUP_BIRTH")
 SIGNUP_NAME = os.getenv("SIGNUP_NAME")
 SIGNUP_PHONE = os.getenv("SIGNUP_PHONE")
 SIGNUP_EMAIL = os.getenv("SIGNUP_EMAIL")
+SIGNUP_PREFER_DATE = os.getenv("SIGNUP_PREFER_DATE")
 
 if os.getenv("SIGNUP_IS_FIRST") is None:
     SIGNUP_IS_FIRST = False 

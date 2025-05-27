@@ -44,7 +44,14 @@ _signupInfos = {
     'phone': private.SIGNUP_PHONE,
     'email': private.SIGNUP_EMAIL,
     'isFirst': private.SIGNUP_IS_FIRST,
+    'preferDate': private.SIGNUP_PREFER_DATE,
 }
+datePrefer = {}
+if _signupInfos['preferDate'] != None:
+    preferCount = len(_signupInfos['preferDate'].split(";"))
+    for date in _signupInfos['preferDate'].split(";"):
+        preferCount[int(date)] = preferCount
+        preferCount -= 1
 
 class ChromeTab:
     def __init__ (self, driver, waitSeconds=10):
@@ -330,6 +337,26 @@ def isExamEarlier (exam1, exam2):
         return True
     return False
 
+def isBetterExam (current, previous):
+    currentWeight = 0
+    previousWeight = 0
+    currentDate = int(current.date[3:7])
+    previousDate = int(previous.date[3:7])
+    if currentDate in datePrefer:
+        currentWeight = datePrefer[currentDate]
+    if previousDate in datePrefer:
+        previousWeight = datePrefer[previousDate]
+    if currentWeight > previousWeight:
+        return current
+    return previous
+
+def chooseExam (avaliableExams):
+    chosen = avaliableExams[0]
+    for exam in avaliableExams:
+        if isBetterExam(exam, chosen):
+            chosen = exam
+    return chosen
+
 def bookExam(oldRecord, avaliableExams):
     if len(avaliableExams) == 0:
         return None
@@ -337,7 +364,7 @@ def bookExam(oldRecord, avaliableExams):
     # Book the first available exam
     exam = avaliableExams[0]
     if oldRecord.isBook:
-        if isExamEarlier(exam, oldRecord):
+        if isBetterExam(exam, oldRecord):
             # Cancel the booked exam
             info(f"Canceling the old exam {oldRecord.place} {oldRecord.chineseDate}")
             cancelExam(oldRecord)
@@ -388,6 +415,7 @@ if __name__ == "__main__":
             oldRecord = findExamRecord(recordTab)
             debug("Parse old exam")
             avaliableExams, unavaliableExams = findAllSites(stations)
+            import pdb; pdb.set_trace()
             debug("Book exam")
             bookedExam = bookExam(oldRecord, avaliableExams)
             if bookedExam:
