@@ -7,40 +7,25 @@ from logsystem import info, debug
 
 class MailHandler:
     def __init__ (self):
-        self.content1 = ""
-        self.content2 = ""
+        self.content = ""
 
-    def bold (self, msg, isImportant = True):
-        if isImportant:
-            self.content1 += f"**{msg}**"
-        else:
-            self.content2 += f"**{msg}**"
+    def bold (self, msg):
+        self.content += f"**{msg}**"
 
-    def text (self, msg, isImportant = True):
-        if isImportant:
-            self.content1 += f"{msg}"
-        else:
-            self.content2 += f"{msg}"
+    def text (self, msg):
+        self.content += f"{msg}"
 
-    def textln (self, msg, isImportant = True):
-        if isImportant:
-            self.content1 += f"{msg}\n"
-        else:
-            self.content2 += f"{msg}\n"
+    def textln (self, msg):
+        self.content += f"{msg}\n"
 
-    def newParagraph (self, isImportant = True):
-        if isImportant:
-            self.content1 += "---\n"
-        else:
-            self.content2 += "---\n"
+    def newParagraph (self):
+        self.content += "---\n"
 
     def plain (self):
-        print(self.content1)
-        print(self.content2)
+        print(self.content)
 
     def send (self):
-        fullContent = self.content1 + "\n---\n"
-        fullContent += self.content2
+        fullContent = self.content
         fullContent = fullContent.replace("\n", "  \n")
         html = markdown.markdown(fullContent)
         self.send_impl(html)
