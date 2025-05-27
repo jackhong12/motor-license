@@ -27,11 +27,35 @@ class Station:
         self.chromeTab = ChromeTab(chrome) 
 
 stations = []
+if private.SIGNUP_PREFER_SITE != None:
+    stations += [Station("漣江", "臺北市區監理所（含金門馬祖）", "連江監理站(連江縣南竿鄉津沙村155號)")]
+else:
+    for site in private.SIGNUP_PREFER_SITE.split(";"):
+        if site == "漣江":
+            stations += [Station("漣江", "臺北市區監理所（含金門馬祖）", "連江監理站(連江縣南竿鄉津沙村155號)")]
+        elif site == "板橋":
+            stations += [Station("板橋", "臺北區監理所（北宜花）", "板橋監理站(新北市中和區中山路三段116號)")]
+        elif site == "士林":
+            stations += [Station("士林", "臺北市區監理所（含金門馬祖）", "士林監理站(臺北市士林區承德路5段80號)")]
+        elif site == "基隆":
+            stations += [Station("基隆", "臺北市區監理所（含金門馬祖）", "基隆監理站(基隆市七堵區實踐路296號)")]
+        elif site == "金門":
+            stations += [Station("金門", "臺北市區監理所（含金門馬祖）", "金門監理站(金門縣金湖鎮黃海路六之一號)")]
+        elif site == "樹林":
+            stations += [Station("樹林", "臺北區監理所（北宜花）", "臺北區監理所(新北市樹林區中正路248巷7號)")]
+        elif site == "蘆洲":
+            stations += [Station("蘆洲", "臺北區監理所（北宜花）", "蘆洲監理站(新北市蘆洲區中山二路163號)")]
+        elif site == "屏東":
+            stations += [Station("屏東", "高雄區監理所（高屏澎東）", "屏東監理站(屏東市忠孝路222號)")]
+        elif site == "恆春":
+            stations += [Station("恆春", "高雄區監理所（高屏澎東）", "恆春監理分站(屏東縣恒春鎮草埔11號)")]
+
+
 #stations += [Station("板橋", "臺北區監理所（北宜花）", "板橋監理站(新北市中和區中山路三段116號)")]
 #stations += [Station("士林", "臺北市區監理所（含金門馬祖）", "士林監理站(臺北市士林區承德路5段80號)")]
 #stations += [Station("基隆", "臺北市區監理所（含金門馬祖）", "基隆監理站(基隆市七堵區實踐路296號)")]
 #stations += [Station("金門", "臺北市區監理所（含金門馬祖）", "金門監理站(金門縣金湖鎮黃海路六之一號)")]
-stations += [Station("漣江", "臺北市區監理所（含金門馬祖）", "連江監理站(連江縣南竿鄉津沙村155號)")]
+#stations += [Station("漣江", "臺北市區監理所（含金門馬祖）", "連江監理站(連江縣南竿鄉津沙村155號)")]
 #stations += [Station("樹林", "臺北區監理所（北宜花）", "臺北區監理所(新北市樹林區中正路248巷7號)")]
 #stations += [Station("蘆洲", "臺北區監理所（北宜花）", "蘆洲監理站(新北市蘆洲區中山二路163號)")]
 #stations += [Station("屏東", "高雄區監理所（高屏澎東）", "屏東監理站(屏東市忠孝路222號)")]
