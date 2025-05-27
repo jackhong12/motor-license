@@ -203,21 +203,26 @@ def signupExam (examInfo):
         d.find_element(By.ID, "headerMessage").text != ""
     )
 
-    showmsg = driver.find_element(By.ID, "headerMessage").text 
-    if showmsg != "":
-        info(f"Booking error (Blocking by issues): {showmsg}")
-        mail = MailHandler()
-        if showmsg.find("查無有效機車危險感知體驗紀錄") >= 0:
-            mail.textln(f"查無有效機車危險感知體驗紀錄，請至「機車危險感知教育平台」完成體驗始得報名!!!!!")
-            mail.textln(f"- Link: https://hpt.thb.gov.tw/reserve/index")
-        else:
-            mail.textln(f"Booking error (Blocking by issues): {showmsg}")
-        mail.send()
-        sys.exit(1)
+    isSuccess = False
+    try:
+        showmsg = driver.find_element(By.ID, "headerMessage").text 
+        if showmsg != "":
+            info(f"Booking error (Blocking by issues): {showmsg}")
+            mail = MailHandler()
+            if showmsg.find("查無有效機車危險感知體驗紀錄") >= 0:
+                mail.textln(f"查無有效機車危險感知體驗紀錄，請至「機車危險感知教育平台」完成體驗始得報名!!!!!")
+                mail.textln(f"- Link: https://hpt.thb.gov.tw/reserve/index")
+            else:
+                mail.textln(f"Booking error (Blocking by issues): {showmsg}")
+            mail.send()
+            sys.exit(1)
+    except:
+        isSuccess = True
 
     # Click OK
-    alert = driver.switch_to.alert
-    alert.accept()
+    if isSuccess:
+        alert = driver.switch_to.alert
+        alert.accept()
 
 def findAvailableDate (station):
     chromeTab = station.chromeTab
