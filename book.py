@@ -27,7 +27,7 @@ class Station:
         self.chromeTab = ChromeTab(chrome) 
 
 stations = []
-if private.SIGNUP_PREFER_SITE != None:
+if private.SIGNUP_PREFER_SITE == None:
     stations += [Station("漣江", "臺北市區監理所（含金門馬祖）", "連江監理站(連江縣南竿鄉津沙村155號)")]
 else:
     for site in private.SIGNUP_PREFER_SITE.split(";"):
@@ -74,7 +74,7 @@ datePrefer = {}
 if _signupInfos['preferDate'] != None:
     preferCount = len(_signupInfos['preferDate'].split(";"))
     for date in _signupInfos['preferDate'].split(";"):
-        preferCount[int(date)] = preferCount
+        datePrefer[int(date)] = preferCount
         preferCount -= 1
 
 class ChromeTab:
@@ -386,7 +386,7 @@ def bookExam(oldRecord, avaliableExams):
         return None
 
     # Book the first available exam
-    exam = avaliableExams[0]
+    exam = chooseExam(avaliableExams) 
     if oldRecord.isBook:
         if isBetterExam(exam, oldRecord):
             # Cancel the booked exam
@@ -439,7 +439,6 @@ if __name__ == "__main__":
             oldRecord = findExamRecord(recordTab)
             debug("Parse old exam")
             avaliableExams, unavaliableExams = findAllSites(stations)
-            import pdb; pdb.set_trace()
             debug("Book exam")
             bookedExam = bookExam(oldRecord, avaliableExams)
             if bookedExam:
