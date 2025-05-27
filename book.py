@@ -409,6 +409,8 @@ def printInfo ():
     mail.textln(f"Phone: {_signupInfos['phone']}")
     mail.textln(f"Email: {_signupInfos['email']}")
     mail.textln(f"Is First: {_signupInfos['isFirst']}")
+    mail.textln(f"Prefer Date: {_signupInfos['preferDate']}")
+    mail.textln(f"Prefer Site: {private.SIGNUP_PREFER_SITE}")
 
     stationStr = ""
     for station in stations:
