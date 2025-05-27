@@ -214,7 +214,7 @@ def signupExam (examInfo):
                 mail.textln(f"- Link: https://hpt.thb.gov.tw/reserve/index")
             else:
                 mail.textln(f"Booking error (Blocking by issues): {showmsg}")
-            mail.send()
+            mail.send_dev()
             sys.exit(1)
     except:
         isSuccess = True
@@ -363,7 +363,7 @@ def printInfo ():
     for station in stations:
         stationStr += f" {station.name}"
     mail.textln(f"Station:{stationStr}")
-    mail.send()
+    mail.send_dev()
 
 if __name__ == "__main__":
     info("Start booking system")
@@ -400,6 +400,7 @@ if __name__ == "__main__":
                 if oldRecord.isBook:
                     mail.textln(f"- 取消以下場次: {oldRecord.place} {oldRecord.chineseDate}")
                 mail.plain()
+                mail.send_dev()
                 mail.send()
 
             logUnavailableExams(unavaliableExams)
@@ -416,6 +417,6 @@ if __name__ == "__main__":
         mail.textln(f"Please check the log.")
         mail.textln(f"Called Stack:")
         mail.textln(f"{stack_str}")
-        mail.send()
+        mail.send_dev()
 
     driver.quit()

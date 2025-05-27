@@ -6,6 +6,7 @@ load_dotenv()
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
 EMAIL_RECV = os.getenv("EMAIL_RECV")
+EMAIL_DEV = os.getenv("EMAIL_DEV")
 
 SIGNUP_ID = os.getenv("SIGNUP_ID")
 SIGNUP_BIRTH = os.getenv("SIGNUP_BIRTH")

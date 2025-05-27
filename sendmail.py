@@ -25,17 +25,21 @@ class MailHandler:
         print(self.content)
 
     def send (self):
-        fullContent = self.content
-        fullContent = fullContent.replace("\n", "  \n")
+        fullContent = self.content.replace("\n", "  \n")
         html = markdown.markdown(fullContent)
-        self.send_impl(html)
+        self.send_impl(html, private.EMAIL_RECV.split(";"))
 
-    def send_impl (self, txt, subject="機車路考預約"):
+    def send_dev (self):
+        fullContent = self.content.replace("\n", "  \n")
+        html = markdown.markdown(fullContent)
+        self.send_impl(html, private.EMAIL_DEV.split(";"))
+
+    def send_impl (self, txt, recvs, subject="機車路考預約"):
         # Email configuration
         sender_email = private.EMAIL_USER 
         password = private.EMAIL_PASS 
         
-        for receiver_email in private.EMAIL_RECV.split(";"):
+        for receiver_email in recvs:
 
             # Compose the email
             message = MIMEMultipart()
