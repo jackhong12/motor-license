@@ -442,6 +442,7 @@ if __name__ == "__main__":
                 info(f"Booking Success: Sending email to {private.EMAIL_RECV}")
                 mail = MailHandler()
                 mail.textln(f"## 路考申請成功!!!!!")
+                mail.textln(f"- 名字: {_signupInfos['name']}")
                 mail.textln(f"- 地點: {bookedExam.place}")
                 mail.textln(f"- 時段: {bookedExam.chineseDate}")
                 mail.textln(f"- 說明: {bookedExam.description}")
