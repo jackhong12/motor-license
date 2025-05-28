@@ -429,7 +429,7 @@ def parserSleep ():
     longPeriod = 10 * 60 # 10 minutes
     now = datetime.now()
     sec = now.hour * 3600 + now.minute * 60 + now.second
-    remain = (24 * 60 * 60) - sec < longPeriod
+    remain = (24 * 60 * 60) - sec
     sleepSec = longPeriod
     if remain < longPeriod:
         sleepSec = remain
