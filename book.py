@@ -370,10 +370,19 @@ def isBetterExam (current, previous):
     return previous
 
 def chooseExam (avaliableExams):
-    chosen = avaliableExams[0]
+    chosen = None
     for exam in avaliableExams:
+        date = int(exam.date[3:7])
+        if not date in datePrefer:
+            continue
+
+        if chosen == None:
+            chosen = exam
+            continue
+
         if isBetterExam(exam, chosen):
             chosen = exam
+
     return chosen
 
 def bookExam(oldRecord, avaliableExams):
@@ -382,6 +391,9 @@ def bookExam(oldRecord, avaliableExams):
 
     # Book the first available exam
     exam = chooseExam(avaliableExams) 
+    if exam == None:
+        return None
+
     if oldRecord.isBook:
         if isBetterExam(exam, oldRecord):
             # Cancel the booked exam
