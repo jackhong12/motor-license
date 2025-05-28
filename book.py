@@ -413,12 +413,26 @@ def printInfo ():
     mail.textln(f"Station:{stationStr}")
     mail.send_dev()
 
+def parserSleep ():
+    longPeriod = 10 * 60 # 10 minutes
+    now = datetime.now()
+    sec = now.hour * 3600 + now.minute * 60 + now.second
+    remain = (24 * 60 * 60) - sec < longPeriod
+    sleepSec = longPeriod
+    if remain < longPeriod:
+        sleepSec = remain
+    elif sec < 5 * 60: # first 5 minutes in a day
+        sleepSec = 30 # 30 seconds
+
+    debug(f"Sleep for {sleepSec} seconds")
+    time.sleep(sleepSec)
+
 if __name__ == "__main__":
     info("Start booking system")
     printInfo()
 
     options = webdriver.ChromeOptions()
-    #options.add_argument('--headless')  # 無頭模式
+    options.add_argument('--headless')  # 無頭模式
     driver = webdriver.Chrome(options=options)
 
     recordTab = ChromeTab(driver)
@@ -453,7 +467,9 @@ if __name__ == "__main__":
 
             logUnavailableExams(unavaliableExams)
             debug("====================== Parsing Finished ======================\n")
-            time.sleep(10 * 60) # every 10 min
+
+            parserSleep()
+
     except KeyboardInterrupt:
         info("Process interrupted by user.")
     except:
