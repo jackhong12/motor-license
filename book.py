@@ -250,11 +250,6 @@ def signupExam (examInfo):
     except:
         isSuccess = True
 
-    # Click OK
-    if isSuccess:
-        alert = driver.switch_to.alert
-        alert.accept()
-
 def findAvailableDate (station):
     chromeTab = station.chromeTab
     driver, wait = chromeTab.moveToCurrentTab()
