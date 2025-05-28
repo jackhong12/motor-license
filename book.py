@@ -370,10 +370,19 @@ def isBetterExam (current, previous):
     return previous
 
 def chooseExam (avaliableExams):
-    chosen = avaliableExams[0]
+    chosen = None
     for exam in avaliableExams:
+        date = int(exam.date[3:7])
+        if not date in datePrefer:
+            continue
+
+        if chosen == None:
+            chosen = exam
+            continue
+
         if isBetterExam(exam, chosen):
             chosen = exam
+
     return chosen
 
 def bookExam(oldRecord, avaliableExams):
@@ -382,6 +391,9 @@ def bookExam(oldRecord, avaliableExams):
 
     # Book the first available exam
     exam = chooseExam(avaliableExams) 
+    if exam == None:
+        return None
+
     if oldRecord.isBook:
         if isBetterExam(exam, oldRecord):
             # Cancel the booked exam
@@ -456,6 +468,7 @@ if __name__ == "__main__":
                 info(f"Booking Success: Sending email to {private.EMAIL_RECV}")
                 mail = MailHandler()
                 mail.textln(f"## 路考申請成功!!!!!")
+                mail.textln(f"- 名字: {_signupInfos['name']}")
                 mail.textln(f"- 地點: {bookedExam.place}")
                 mail.textln(f"- 時段: {bookedExam.chineseDate}")
                 mail.textln(f"- 說明: {bookedExam.description}")
